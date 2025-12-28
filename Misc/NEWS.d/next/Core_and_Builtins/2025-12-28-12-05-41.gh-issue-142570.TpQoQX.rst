@@ -1,0 +1,2 @@
+Fix ``pymain_run_file_obj`` to validate the file type before skipping the
+first source line. Contributed by Abdullah Alharbi.
