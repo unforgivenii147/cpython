@@ -327,6 +327,14 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
         return NULL;
     }
 
+    if (instance != Py_None && !PyObject_TypeCheck(instance, type)) {
+        PyErr_Format(PyExc_TypeError, "expected %s, got %s",
+                     type->tp_name, Py_TYPE(instance)->tp_name);
+        Py_DECREF(instance);
+        Py_DECREF(weak_cache);
+        return NULL;
+    }
+
     if (instance == Py_None) {
         Py_DECREF(instance);
         PyObject *tmp = zoneinfo_new_instance(state, type, key);
@@ -339,6 +347,14 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
             PyObject_CallMethod(weak_cache, "setdefault", "OO", key, tmp);
         Py_DECREF(tmp);
         if (instance == NULL) {
+            Py_DECREF(weak_cache);
+            return NULL;
+        }
+
+        if (!PyObject_TypeCheck(instance, type)) {
+            PyErr_Format(PyExc_TypeError, "expected %s, got %s",
+                         type->tp_name, Py_TYPE(instance)->tp_name);
+            Py_DECREF(instance);
             Py_DECREF(weak_cache);
             return NULL;
         }
