@@ -970,6 +970,87 @@ class CPythonOrderedDictTests(OrderedDictTests,
 
         gc.collect()
 
+    def test_copy_concurrent_clear_in__getitem__(self):
+        class MyOD(self.OrderedDict):
+            def __getitem__(self, key):
+                super().clear()
+                return None
+
+        od = MyOD([(i, i) for i in range(4)])
+        self.assertRaises(RuntimeError, od.copy)
+
+    def test_copy_concurrent_insertion_in__getitem__(self):
+        class MyOD(self.OrderedDict):
+            def __getitem__(self, key):
+                self['new_key'] = 'new_value'
+                return super().__getitem__(key)
+
+        od = MyOD([(1, 'one'), (2, 'two')])
+        self.assertRaises(RuntimeError, od.copy)
+
+    def test_copy_concurrent_deletion_by_del_in__getitem__(self):
+        class MyOD(self.OrderedDict):
+            call_count = 0
+            def __getitem__(self, key):
+                self.call_count += 1
+                if self.call_count == 1:
+                    del self[3]
+                return super().__getitem__(key)
+
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
+        self.assertRaises(RuntimeError, od.copy)
+
+    def test_copy_concurrent_deletion_by_pop_in__getitem__(self):
+        class MyOD(self.OrderedDict):
+            call_count = 0
+            def __getitem__(self, key):
+                self.call_count += 1
+                if self.call_count == 1:
+                    self.pop(3)
+                return super().__getitem__(key)
+
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
+        self.assertRaises(RuntimeError, od.copy)
+
+    def test_copy_concurrent_deletion_and_set_in__getitem__(self):
+        class MyOD(self.OrderedDict):
+            call_count = 0
+            instance_count = 0
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                MyOD.instance_count += 1
+
+            def __getitem__(self, key):
+                self.call_count += 1
+                if self.call_count == 1:
+                    del self[4]
+                elif self.call_count == 2:
+                    self['new_key'] = 'new_value'
+                return super().__getitem__(key)
+
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')])
+        self.assertRaises(RuntimeError, od.copy)
+        self.assertEqual(MyOD.instance_count, 2)
+
+    def test_copy_concurrent_mutation_in__setitem__(self):
+        od = None
+        class MyOD(self.OrderedDict):
+            instance_count = 0
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                MyOD.instance_count += 1
+
+            def __setitem__(self, key, value):
+                if self.instance_count == 2 and len(od) > 1:
+                    del od[next(iter(od))]
+                return super().__setitem__(key, value)
+
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
+        self.assertRaises(RuntimeError, od.copy)
+        self.assertEqual(MyOD.instance_count, 2)
+
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):
 
