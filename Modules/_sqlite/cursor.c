@@ -870,6 +870,12 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
     }
 
+    // PyObject_GetIter() may have a side-effect on the connection's state.
+    // See: https://github.com/python/cpython/issues/143198.
+    if (!pysqlite_check_connection(self->connection)) {
+        goto error;
+    }
+
     /* reset description */
     Py_INCREF(Py_None);
     Py_SETREF(self->description, Py_None);
@@ -920,14 +926,25 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     }
 
     assert(!sqlite3_stmt_busy(self->statement->st));
+    assert(multiple || Py_IS_TYPE(parameters_iter, &PyListIter_Type));
+
     while (1) {
         parameters = PyIter_Next(parameters_iter);
         if (!parameters) {
+            assert(multiple || !PyErr_Occurred());
             break;
+        }
+        // PyIter_Next() may have a side-effect on the connection's state.
+        // See: https://github.com/python/cpython/issues/143198.
+        if (multiple && !pysqlite_check_connection(self->connection)) {
+            goto error;
         }
 
         bind_parameters(state, self->statement, parameters);
-        if (PyErr_Occurred()) {
+        // Note: bind_parameters() can have a side effect on the connection's
+        // state that could only be visible on the next API usage if we do not
+        // check it now.
+        if (PyErr_Occurred() || !pysqlite_check_connection(self->connection)) {
             goto error;
         }
 
@@ -994,6 +1011,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     }
 
     if (!multiple) {
+        assert(!PyErr_Occurred());
         sqlite_int64 lastrowid;
 
         Py_BEGIN_ALLOW_THREADS
