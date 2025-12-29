@@ -6725,7 +6725,7 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(DK_IS_UNICODE(keys));
+            assert(keys->dk_kind == DICT_KEYS_UNICODE);
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -6750,7 +6750,7 @@
                 SET_CURRENT_CACHED_VALUES(1);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(DK_IS_UNICODE(keys));
+            assert(keys->dk_kind == DICT_KEYS_UNICODE);
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -6779,7 +6779,7 @@
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(DK_IS_UNICODE(keys));
+            assert(keys->dk_kind == DICT_KEYS_UNICODE);
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
@@ -6812,7 +6812,7 @@
                 SET_CURRENT_CACHED_VALUES(3);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(DK_IS_UNICODE(keys));
+            assert(keys->dk_kind == DICT_KEYS_UNICODE);
             _tos_cache2 = _stack_item_2;
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
@@ -6839,7 +6839,7 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(DK_IS_UNICODE(keys));
+            assert(keys->dk_kind == DICT_KEYS_UNICODE);
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
             assert(index < DK_SIZE(keys));
             PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
@@ -6885,7 +6885,7 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(DK_IS_UNICODE(keys));
+            assert(keys->dk_kind == DICT_KEYS_UNICODE);
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
             PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             if (res_o == NULL) {
@@ -8961,7 +8961,7 @@
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (hint >= (size_t)dict->ma_keys->dk_nentries ||
-                !DK_IS_UNICODE(dict->ma_keys)) {
+                dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
                 UNLOCK_OBJECT(dict);
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
