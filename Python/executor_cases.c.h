@@ -10322,7 +10322,6 @@
             _PyStackRef iter;
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
-            #ifndef Py_GIL_DISABLED
             PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(list_o) == &PyList_Type);
             if ((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyList_GET_SIZE(list_o)) {
@@ -10330,7 +10329,6 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            #endif
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
             SET_CURRENT_CACHED_VALUES(2);
@@ -10348,7 +10346,6 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             null_or_index = _stack_item_0;
             iter = stack_pointer[-1];
-            #ifndef Py_GIL_DISABLED
             PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(list_o) == &PyList_Type);
             if ((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyList_GET_SIZE(list_o)) {
@@ -10357,7 +10354,6 @@
                 SET_CURRENT_CACHED_VALUES(1);
                 JUMP_TO_JUMP_TARGET();
             }
-            #endif
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
             SET_CURRENT_CACHED_VALUES(2);
@@ -10376,7 +10372,6 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             null_or_index = _stack_item_1;
             iter = _stack_item_0;
-            #ifndef Py_GIL_DISABLED
             PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(list_o) == &PyList_Type);
             if ((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyList_GET_SIZE(list_o)) {
@@ -10386,7 +10381,6 @@
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
-            #endif
             _tos_cache1 = null_or_index;
             _tos_cache0 = iter;
             SET_CURRENT_CACHED_VALUES(2);
@@ -10404,7 +10398,6 @@
             _PyStackRef _stack_item_2 = _tos_cache2;
             null_or_index = _stack_item_2;
             iter = _stack_item_1;
-            #ifndef Py_GIL_DISABLED
             PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(list_o) == &PyList_Type);
             if ((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyList_GET_SIZE(list_o)) {
@@ -10415,7 +10408,6 @@
                 SET_CURRENT_CACHED_VALUES(3);
                 JUMP_TO_JUMP_TARGET();
             }
-            #endif
             _tos_cache2 = null_or_index;
             _tos_cache1 = iter;
             _tos_cache0 = _stack_item_0;

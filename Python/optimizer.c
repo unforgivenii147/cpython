@@ -140,7 +140,6 @@ _PyOptimizer_Optimize(
     }
     assert(!interp->compiling);
     assert(_tstate->jit_tracer_state.initial_state.stack_depth >= 0);
-#ifndef Py_GIL_DISABLED
     assert(_tstate->jit_tracer_state.initial_state.func != NULL);
     interp->compiling = true;
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
@@ -198,9 +197,6 @@ _PyOptimizer_Optimize(
     }
     interp->compiling = false;
     return 1;
-#else
-    return 0;
-#endif
 }
 
 static _PyExecutorObject *
@@ -473,7 +469,11 @@ static PyMethodDef uop_executor_methods[] = {
 static int
 executor_is_gc(PyObject *o)
 {
+#ifdef Py_GIL_DISABLED
+    return 1;
+#else
     return !_Py_IsImmortal(o);
+#endif
 }
 
 PyTypeObject _PyUOpExecutor_Type = {
@@ -1651,8 +1651,11 @@ unlink_executor(_PyExecutorObject *executor)
         prev->vm_data.links.next = next;
     }
     else {
-        // prev == NULL implies that executor is the list head
-        PyInterpreterState *interp = PyInterpreterState_Get();
+        // prev == NULL often implies that executor is the list head
+        // Note that we should *not* get the current interpreter, as
+        // that may not always correspond to the interpreter this executor
+        // belongs to.
+        PyInterpreterState *interp = executor->interp;
         assert(interp->executor_list_head == executor);
         interp->executor_list_head = next;
     }
@@ -1667,6 +1670,7 @@ _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_s
     for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
+    executor->interp = _PyInterpreterState_GET();
     link_executor(executor);
 }
 
@@ -1781,12 +1785,20 @@ _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
     _Py_BloomFilter_Add(&executor->vm_data.bloom, obj);
 }
 
+static void  jit_tracer_invalidate_dependency(PyThreadState *tstate, void *obj);
+
 /* Invalidate all executors that depend on `obj`
  * May cause other executors to be invalidated as well
  */
 void
 _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
+
+    // It doesn't matter if we don't invalidate all threads.
+    // If more threads are spawned, we force the jit not to compile anyways
+    // so the trace gets abandoned.
+    jit_tracer_invalidate_dependency(_PyThreadState_GET(), obj);
+
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
     _Py_BloomFilter_Add(&obj_filter, obj);
@@ -1824,8 +1836,8 @@ error:
     _Py_Executors_InvalidateAll(interp, is_invalidation);
 }
 
-void
-_PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
+static void
+jit_tracer_invalidate_dependency(PyThreadState *tstate, void *obj)
 {
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
